@@ -51,3 +51,32 @@ async function loadPortfolio() {
 }
 
 loadPortfolio();
+
+async function loadCertificates() {
+  const grid = document.getElementById("certificate-grid");
+  const emptyState = document.getElementById("certificates-empty");
+  if (!grid || !emptyState || !window.portfolioSupabase.configured) return;
+  const client = window.portfolioSupabase.client;
+  const { data, error } = await client.from("certificates")
+    .select("id,title,issuer,issued_on,description,file_path,file_type")
+    .eq("published", true).order("created_at", { ascending: false });
+  if (error) {
+    emptyState.textContent = "Certificates could not be loaded right now.";
+    emptyState.classList.remove("hidden");
+    console.error("Could not load certificates.", error);
+    return;
+  }
+  const certificates = data || [];
+  grid.innerHTML = certificates.map(item => {
+    const url = client.storage.from("certificates").getPublicUrl(item.file_path).data.publicUrl;
+    const isPdf = item.file_type === "application/pdf" || String(item.file_path).toLowerCase().endsWith(".pdf");
+    const preview = isPdf
+      ? `<div class="certificate-pdf-preview"><span class="pdf-mark">PDF</span><span>Certificate document</span></div>`
+      : `<img class="certificate-image" src="${escapeHtml(url)}" alt="${escapeHtml(item.title)} certificate" loading="lazy">`;
+    return `<article class="certificate-card">${preview}<div class="certificate-content"><div class="certificate-meta">${escapeHtml(item.issuer || "Certificate")}${item.issued_on ? ` · ${escapeHtml(item.issued_on)}` : ""}</div><h3>${escapeHtml(item.title)}</h3>${item.description ? `<p>${escapeHtml(item.description)}</p>` : ""}<a class="button small" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${isPdf ? "View PDF ↗" : "View certificate ↗"}</a></div></article>`;
+  }).join("");
+  emptyState.classList.toggle("hidden", certificates.length > 0);
+}
+
+loadCertificates();
+

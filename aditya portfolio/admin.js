@@ -233,12 +233,12 @@ async function start() {
   const { data } = await client.auth.getSession();
   if (data.session) {
     session = data.session;
-    try { await verifyAdmin(); showDashboard(); await loadProjects(); } catch (error) { showLogin(); setLoginStatus(error.message, true); }
+    try { await verifyAdmin(); showDashboard(); await loadProjects(); await loadCertificatesAdmin(); } catch (error) { showLogin(); setLoginStatus(error.message, true); }
   } else showLogin();
   client.auth.onAuthStateChange(async (_event, nextSession) => {
     session = nextSession;
     if (!nextSession) { showLogin(); setLoginStatus("Your session has ended. Please sign in again."); return; }
-    try { await verifyAdmin(); showDashboard(); await loadProjects(); } catch (error) { showLogin(); setLoginStatus(error.message, true); }
+    try { await verifyAdmin(); showDashboard(); await loadProjects(); await loadCertificatesAdmin(); } catch (error) { showLogin(); setLoginStatus(error.message, true); }
   });
 }
 
@@ -270,4 +270,12 @@ $("project-list").addEventListener("click", event => {
 $("export-json").addEventListener("click", exportJson);
 $("import-json").addEventListener("change", importJson);
 $("reset-defaults").addEventListener("click", restoreDefaults);
+const certificateForm = $("certificate-form");
+if (certificateForm) certificateForm.addEventListener("submit", uploadCertificate);
+const certificateList = $("certificate-admin-list");
+if (certificateList) certificateList.addEventListener("click", event => {
+  const button = event.target.closest("[data-certificate-delete]");
+  if (button) deleteCertificate(button.dataset.certificateDelete);
+});
+
 start();

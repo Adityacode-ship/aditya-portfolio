@@ -16,4 +16,13 @@
 <div class="toolbar"><button class="button" type="submit">Save project</button><button class="button secondary" type="button" id="reset-form">Clear form</button></div><div id="status" class="status" role="status"></div>
 </form></section>
 <section class="panel"><h2>Your projects <span id="count" class="muted"></span></h2><div class="toolbar"><button id="export-json" class="mini-btn">Export JSON backup</button><label class="mini-btn file-label">Import JSON <input id="import-json" type="file" accept="application/json" hidden></label><button id="reset-defaults" class="mini-btn">Restore starter projects</button></div><div id="project-list"></div></section></div>
+<section class="panel certificate-admin-panel"><h2>Manage certificates</h2><p class="muted">Upload a certificate image (PNG/JPG/WebP) or PDF. It will appear in the public Certificates section.</p>
+<form id="certificate-form"><div class="form-grid">
+<div class="field"><label for="certificate-title">Certificate title *</label><input id="certificate-title" required maxlength="160" placeholder="e.g. Data Analytics with Python"></div>
+<div class="field"><label for="certificate-issuer">Issuing organization</label><input id="certificate-issuer" maxlength="120" placeholder="e.g. NPTEL / Coursera"></div>
+<div class="field"><label for="certificate-date">Issue year / date</label><input id="certificate-date" maxlength="40" placeholder="e.g. 2026"></div>
+<div class="field"><label for="certificate-file">Certificate file *</label><input id="certificate-file" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" required><span class="hint">PNG, JPG, WebP, or PDF. Maximum 10 MB.</span></div>
+<div class="field full"><label for="certificate-description">Short description (optional)</label><textarea id="certificate-description" placeholder="Skills or course covered"></textarea></div>
+</div><div class="toolbar"><button class="button" type="submit">Upload certificate</button><button class="button secondary" type="reset" id="certificate-reset">Clear form</button></div><div id="certificate-status" class="status" role="status"></div></form>
+<div class="certificate-admin-list" id="certificate-admin-list"></div></section>
 </section></main><script src="supabase-config.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-client.js"></script><script src="projects.js"></script><script src="admin.js"></script></body></html>

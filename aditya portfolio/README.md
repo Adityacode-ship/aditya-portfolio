@@ -89,3 +89,12 @@ Deploy the static files to GitHub Pages, Netlify, Vercel static hosting, or anot
 - Project writes no longer use localStorage. Browser storage is used only by the browser itself for Supabase’s session handling.
 - The client checks the session on page load and re-checks authorization with the database `is_admin()` function.
 - Frontend checks improve user feedback, but authorization is enforced again by Postgres RLS and Storage policies for direct API calls.
+
+
+## Certificates section setup
+1. In Supabase Dashboard → SQL Editor, run `supabase-certificates-migration.sql` once. This creates the `certificates` table, public file bucket, and admin-only write policies.
+2. Push the updated portfolio files to the root of your existing GitHub repository.
+3. Open `admin.html`, sign in, scroll to **Manage certificates**, and upload PNG/JPG/WebP or PDF (max 10 MB).
+4. Certificates appear automatically in the public portfolio. Uploading/deleting certificates does not require another GitHub push.
+
+Only the existing Supabase publishable key belongs in the frontend. Never add a service-role/secret key to these files.
