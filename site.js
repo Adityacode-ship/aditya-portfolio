@@ -1,7 +1,9 @@
 const grid = document.getElementById("project-grid");
 const filters = document.getElementById("filters");
 const empty = document.getElementById("empty");
-document.getElementById("year").textContent = new Date().getFullYear();
+const yearElement = document.getElementById("year");
+if (yearElement) yearElement.textContent = new Date().getFullYear();
+
 
 function renderPortfolio(projects) {
   let active = "All";
