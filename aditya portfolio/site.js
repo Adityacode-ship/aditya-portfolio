@@ -86,3 +86,69 @@ async function loadCertificates() {
 
 loadCertificates();
 
+
+// ---------- Project image lightbox ----------
+(function setupProjectLightbox() {
+  let images = [];
+  let currentIndex = 0;
+  let overlay;
+
+  function ensureOverlay() {
+    if (overlay) return overlay;
+    overlay = document.createElement('div');
+    overlay.className = 'image-lightbox hidden';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', 'Project image preview');
+    overlay.innerHTML = `
+      <button class="lightbox-close" type="button" aria-label="Close image preview">&times;</button>
+      <button class="lightbox-nav lightbox-prev" type="button" aria-label="Previous image">&#10094;</button>
+      <figure class="lightbox-figure"><img class="lightbox-image" alt=""><figcaption class="lightbox-caption"></figcaption></figure>
+      <button class="lightbox-nav lightbox-next" type="button" aria-label="Next image">&#10095;</button>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', event => {
+      if (event.target === overlay || event.target.closest('.lightbox-close')) close();
+      if (event.target.closest('.lightbox-prev')) show(currentIndex - 1);
+      if (event.target.closest('.lightbox-next')) show(currentIndex + 1);
+    });
+    return overlay;
+  }
+
+  function show(index) {
+    if (!images.length) return;
+    currentIndex = (index + images.length) % images.length;
+    const box = ensureOverlay();
+    const image = images[currentIndex];
+    box.querySelector('.lightbox-image').src = image.src;
+    box.querySelector('.lightbox-image').alt = image.alt || 'Project screenshot';
+    box.querySelector('.lightbox-caption').textContent = `${image.alt || 'Project screenshot'} (${currentIndex + 1} of ${images.length})`;
+    box.querySelector('.lightbox-prev').classList.toggle('hidden', images.length < 2);
+    box.querySelector('.lightbox-next').classList.toggle('hidden', images.length < 2);
+    box.classList.remove('hidden');
+    document.body.classList.add('lightbox-open');
+    box.querySelector('.lightbox-close').focus();
+  }
+
+  function close() {
+    if (!overlay) return;
+    overlay.classList.add('hidden');
+    document.body.classList.remove('lightbox-open');
+    const active = document.activeElement;
+    if (active && active.blur) active.blur();
+  }
+
+  document.addEventListener('click', event => {
+    const clicked = event.target.closest('.project-gallery .project-image');
+    if (!clicked) return;
+    const gallery = clicked.closest('.project-gallery');
+    images = Array.from(gallery.querySelectorAll('.project-image')).map(img => ({ src: img.currentSrc || img.src, alt: img.alt }));
+    show(images.findIndex(img => img.src === (clicked.currentSrc || clicked.src)));
+  });
+
+  document.addEventListener('keydown', event => {
+    if (!overlay || overlay.classList.contains('hidden')) return;
+    if (event.key === 'Escape') close();
+    else if (event.key === 'ArrowLeft') show(currentIndex - 1);
+    else if (event.key === 'ArrowRight') show(currentIndex + 1);
+  });
+})();

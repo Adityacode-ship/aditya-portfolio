@@ -17,3 +17,18 @@
 .image-preview-item { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .image-preview-item .preview { width: 100%; height: 100px; object-fit: cover; border-radius: 8px; }
 .image-preview-item small { overflow-wrap: anywhere; color: var(--muted, #aab); }
+
+/* Click-to-open project image preview */
+.project-gallery .project-image { cursor: zoom-in; transition: transform .18s ease, filter .18s ease; }
+.project-gallery .project-image:hover { filter: brightness(1.08); }
+body.lightbox-open { overflow: hidden; }
+.image-lightbox { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; gap: 18px; padding: 64px 28px 34px; background: rgba(2, 8, 20, .94); backdrop-filter: blur(10px); }
+.image-lightbox.hidden { display: none !important; }
+.lightbox-figure { margin: 0; max-width: min(1100px, 78vw); max-height: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.lightbox-image { display: block; max-width: 100%; max-height: calc(100vh - 130px); object-fit: contain; border: 1px solid #29415f; border-radius: 12px; box-shadow: 0 24px 80px rgba(0,0,0,.45); }
+.lightbox-caption { color: #d8e6fb; text-align: center; font-size: 13px; }
+.lightbox-close, .lightbox-nav { display: grid; place-items: center; border: 1px solid #304765; color: #eaf3ff; background: #10213b; cursor: pointer; border-radius: 50%; transition: background .15s ease, transform .15s ease; }
+.lightbox-close:hover, .lightbox-nav:hover { background: #1b3659; transform: scale(1.05); }
+.lightbox-close { position: absolute; top: 18px; right: 22px; width: 44px; height: 44px; font-size: 30px; line-height: 1; }
+.lightbox-nav { flex: 0 0 46px; width: 46px; height: 46px; font-size: 20px; }
+@media (max-width: 640px) { .image-lightbox { gap: 8px; padding: 64px 10px 24px; } .lightbox-figure { max-width: calc(100vw - 100px); } .lightbox-nav { flex-basis: 34px; width: 34px; height: 34px; font-size: 15px; } .lightbox-image { max-height: calc(100vh - 150px); } .lightbox-close { top: 12px; right: 12px; } }
