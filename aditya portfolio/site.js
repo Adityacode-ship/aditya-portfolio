@@ -4,6 +4,7 @@ const empty = document.getElementById("empty");
 const yearElement = document.getElementById("year");
 if (yearElement) yearElement.textContent = new Date().getFullYear();
 
+
 function renderPortfolio(projects) {
   let active = "All";
   filters.innerHTML = ["All", ...CATEGORIES].map(category =>
@@ -13,12 +14,16 @@ function renderPortfolio(projects) {
   function draw() {
     const shown = projects.filter(project => active === "All" || project.category === active);
     grid.innerHTML = shown.map(project => {
-      const imageUrl = project.image_path
-        ? window.portfolioSupabase.client.storage.from("project-images").getPublicUrl(project.image_path).data.publicUrl
-        : "";
+      const imagePaths = Array.isArray(project.image_paths) && project.image_paths.length
+        ? project.image_paths
+        : (project.image_path ? [project.image_path] : []);
+      const imageUrls = imagePaths.map(path => window.portfolioSupabase.client.storage.from("project-images").getPublicUrl(path).data.publicUrl);
+      const imageMarkup = imageUrls.length
+        ? `<div class="project-gallery">${imageUrls.map((url, index) => `<img class="project-image" src="${escapeHtml(url)}" alt="${escapeHtml(project.title)} screenshot ${index + 1}" loading="lazy">`).join("")}</div>`
+        : `<div class="project-image placeholder">PROJECT PREVIEW</div>`;
       const githubUrl = safeExternalUrl(project.github_url);
       const demoUrl = safeExternalUrl(project.live_demo_url);
-      return `<article class="project-card">${imageUrl ? `<img class="project-image" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(project.title)} preview">` : `<div class="project-image placeholder">PROJECT PREVIEW</div>`}<div class="project-content"><div class="project-meta"><span>${escapeHtml(project.category)}</span><span>PROJECT</span></div><h3>${escapeHtml(project.title)}</h3><p>${escapeHtml(project.description)}</p><div class="tags">${(project.technologies || []).map(tool => `<span class="tag">${escapeHtml(tool)}</span>`).join("")}</div><div class="project-links">${githubUrl ? `<a href="${escapeHtml(githubUrl)}" target="_blank" rel="noopener noreferrer">View source ↗</a>` : ""}${demoUrl ? `<a href="${escapeHtml(demoUrl)}" target="_blank" rel="noopener noreferrer">Live demo ↗</a>` : ""}</div></div></article>`;
+      return `<article class="project-card">${imageMarkup}<div class="project-content"><div class="project-meta"><span>${escapeHtml(project.category)}</span><span>PROJECT</span></div><h3>${escapeHtml(project.title)}</h3><p>${escapeHtml(project.description)}</p><div class="tags">${(project.technologies || []).map(tool => `<span class="tag">${escapeHtml(tool)}</span>`).join("")}</div><div class="project-links">${githubUrl ? `<a href="${escapeHtml(githubUrl)}" target="_blank" rel="noopener noreferrer">View source ↗</a>` : ""}${demoUrl ? `<a href="${escapeHtml(demoUrl)}" target="_blank" rel="noopener noreferrer">Live demo ↗</a>` : ""}</div></div></article>`;
     }).join("");
     empty.classList.toggle("hidden", shown.length > 0);
     filters.querySelectorAll("button").forEach(button => button.classList.toggle("active", button.dataset.cat === active));
@@ -39,7 +44,7 @@ async function loadPortfolio() {
   }
   const { data, error } = await window.portfolioSupabase.client
     .from("projects")
-    .select("id,title,category,description,technologies,github_url,live_demo_url,image_path")
+    .select("id,title,category,description,technologies,github_url,live_demo_url,image_path,image_paths")
     .eq("published", true)
     .order("created_at", { ascending: false });
   if (error) {

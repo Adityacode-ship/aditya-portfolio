@@ -8,3 +8,12 @@
 @media(max-width:900px){.certificate-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.certificate-grid{grid-template-columns:1fr}}
 
 @media(max-width:760px){.site-header{height:auto;padding:17px 20px;flex-wrap:wrap}.site-header nav{order:3;width:100%;overflow:auto;gap:18px}.site-header nav a{white-space:nowrap}.hero,.section{padding:65px 20px}.hero{padding-top:75px}h1{letter-spacing:-2px}.skills-grid{grid-template-columns:repeat(2,1fr)}.project-grid{grid-template-columns:1fr}.section-head{align-items:start;flex-direction:column}.experience-card{grid-template-columns:1fr}.experience-card>p{grid-column:auto}.admin-layout{grid-template-columns:1fr}.admin-wrap{padding:35px 16px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.admin-top{align-items:flex-start;flex-direction:column}footer{padding:22px 20px;flex-direction:column}}
+
+
+/* Multiple project screenshots */
+.project-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; padding: 10px; background: rgba(255,255,255,.02); }
+.project-gallery .project-image { width: 100%; height: 145px; object-fit: cover; border-radius: 8px; }
+.image-preview-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin: 12px 0; }
+.image-preview-item { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.image-preview-item .preview { width: 100%; height: 100px; object-fit: cover; border-radius: 8px; }
+.image-preview-item small { overflow-wrap: anywhere; color: var(--muted, #aab); }

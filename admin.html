@@ -11,8 +11,26 @@
 <div class="field"><label for="tools">Technologies (comma-separated)</label><input id="tools" placeholder="Power BI, DAX, Excel"></div>
 <div class="field"><label for="github">GitHub repository URL</label><input id="github" type="url" placeholder="https://github.com/..."></div>
 <div class="field"><label for="demo">Live demo / dashboard URL</label><input id="demo" type="url" placeholder="https://..."></div>
-<div class="field"><label for="image-file">Project screenshot / thumbnail</label><input id="image-file" type="file" accept="image/png,image/jpeg,image/webp"><span class="hint">Choose a PNG, JPG, or WebP image up to 5 MB. Images are stored in Supabase Storage.</span></div>
-<img id="image-preview" class="preview hidden" alt="Selected project image preview"><div class="toolbar"><button type="button" id="remove-image" class="mini-btn">Remove image</button></div>
+<div class="field">
+  <label for="image-file">Project screenshots / images</label>
+  <input
+    id="image-file"
+    type="file"
+    accept="image/png,image/jpeg,image/webp"
+    multiple
+  >
+  <span class="hint">
+    Select multiple PNG, JPG, or WebP images. Maximum 5 MB per image.
+  </span>
+</div>
+
+<div id="image-preview-container" class="image-preview-container"></div>
+
+<div class="toolbar">
+  <button type="button" id="remove-image" class="mini-btn">
+    Remove selected images
+  </button>
+</div>
 <div class="toolbar"><button class="button" type="submit">Save project</button><button class="button secondary" type="button" id="reset-form">Clear form</button></div><div id="status" class="status" role="status"></div>
 </form></section>
 <section class="panel"><h2>Your projects <span id="count" class="muted"></span></h2><div class="toolbar"><button id="export-json" class="mini-btn">Export JSON backup</button><label class="mini-btn file-label">Import JSON <input id="import-json" type="file" accept="application/json" hidden></label><button id="reset-defaults" class="mini-btn">Restore starter projects</button></div><div id="project-list"></div></section></div>

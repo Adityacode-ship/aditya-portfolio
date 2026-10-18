@@ -12,6 +12,7 @@ const starterProjects = [
     github_url: "https://github.com/Adityacode-ship/Ecommerce-Analytics-Solution-and-Data-Scraping",
     live_demo_url: "",
     image_path: "",
+    image_paths: [],
     published: true
   },
   {
@@ -23,13 +24,15 @@ const starterProjects = [
     github_url: "https://github.com/Adityacode-ship/Fake-Currency-Detection-using-cnn",
     live_demo_url: "https://fake-currency-detection-using-cnn-4.onrender.com/",
     image_path: "",
+    image_paths: [],
     published: true
   }
 ];
 
 let projects = [];
 let session = null;
-let selectedImagePath = "";
+let selectedImagePaths = [];
+let newImageFiles = [];
 
 // ---------- Status messages ----------
 
@@ -229,9 +232,9 @@ function renderList() {
 
   $("project-list").innerHTML = projects.length
     ? projects.map(project => {
-        const imageUrl = project.image_path
-          ? client.storage.from("project-images")
-              .getPublicUrl(project.image_path).data.publicUrl
+        const firstImagePath = normalizeImagePaths(project)[0] || "";
+        const imageUrl = firstImagePath
+          ? client.storage.from("project-images").getPublicUrl(firstImagePath).data.publicUrl
           : "";
 
         return `
@@ -257,13 +260,34 @@ function renderList() {
     : `<p class="muted">No projects yet. Add your first project.</p>`;
 }
 
+function normalizeImagePaths(project) {
+  const paths = Array.isArray(project.image_paths) ? project.image_paths.filter(Boolean) : [];
+  if (paths.length) return paths;
+  return project.image_path ? [project.image_path] : [];
+}
+
+function renderImagePreviews() {
+  const container = $("image-preview-container");
+  if (!container) return;
+  const existing = selectedImagePaths.map((path, index) => ({
+    url: client.storage.from("project-images").getPublicUrl(path).data.publicUrl,
+    label: `Saved image ${index + 1}`
+  }));
+  const pending = newImageFiles.map((file, index) => ({
+    url: URL.createObjectURL(file), label: file.name, pending: true, index
+  }));
+  container.innerHTML = [...existing, ...pending].map(item =>
+    `<div class="image-preview-item"><img class="preview" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.label)}">${item.pending ? `<button type="button" class="mini-btn danger" data-remove-new-image="${item.index}">Remove</button>` : `<small>${escapeHtml(item.label)}</small>`}</div>`
+  ).join("");
+}
+
 function clearForm() {
   $("project-form").reset();
   $("project-id").value = "";
   $("image-file").value = "";
-  $("image-preview").src = "";
-  $("image-preview").classList.add("hidden");
-  selectedImagePath = "";
+  selectedImagePaths = [];
+  newImageFiles = [];
+  renderImagePreviews();
   $("form-title").textContent = "Add a project";
 }
 
@@ -275,41 +299,32 @@ function fillForm(project) {
   $("tools").value = (project.technologies || []).join(", ");
   $("github").value = project.github_url || "";
   $("demo").value = project.live_demo_url || "";
-
-  selectedImagePath = project.image_path || "";
-
-  const url = selectedImagePath
-    ? client.storage.from("project-images")
-        .getPublicUrl(selectedImagePath).data.publicUrl
-    : "";
-
-  $("image-preview").src = url;
-  $("image-preview").classList.toggle("hidden", !url);
+  selectedImagePaths = normalizeImagePaths(project);
+  newImageFiles = [];
+  $("image-file").value = "";
+  renderImagePreviews();
   $("form-title").textContent = "Edit project";
-
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-async function uploadImage(file, projectId) {
-  if (!file) return selectedImagePath;
-
-  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
-    throw new Error("Choose a PNG, JPG, or WebP image.");
+async function uploadImages(files, projectId) {
+  const paths = [];
+  for (const file of files) {
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      throw new Error("Choose PNG, JPG, or WebP images only.");
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error(`Image ${file.name} must be smaller than 5 MB.`);
+    }
+    const extension = file.type.split("/")[1].replace("jpeg", "jpg");
+    const path = `${session.user.id}/${projectId}-${crypto.randomUUID()}.${extension}`;
+    const { error } = await client.storage.from("project-images").upload(path, file, {
+      contentType: file.type, upsert: false
+    });
+    if (error) throw error;
+    paths.push(path);
   }
-
-  if (file.size > 5 * 1024 * 1024) {
-    throw new Error("Project images must be smaller than 5 MB.");
-  }
-
-  const extension = file.type.split("/")[1].replace("jpeg", "jpg");
-  const path = `${session.user.id}/${projectId}-${crypto.randomUUID()}.${extension}`;
-
-  const { error } = await client.storage
-    .from("project-images")
-    .upload(path, file, { contentType: file.type, upsert: false });
-
-  if (error) throw error;
-  return path;
+  return paths;
 }
 
 async function removeImage(path) {
@@ -341,8 +356,8 @@ async function saveProject(event) {
   setStatus("Saving project...");
 
   try {
-    const file = $("image-file").files[0];
-    const imagePath = await uploadImage(file, id);
+    const uploadedPaths = await uploadImages(newImageFiles, id);
+    const imagePaths = [...selectedImagePaths, ...uploadedPaths];
 
     const record = {
       id,
@@ -353,7 +368,8 @@ async function saveProject(event) {
         .map(value => value.trim()).filter(Boolean),
       github_url: githubUrl,
       live_demo_url: demoUrl,
-      image_path: imagePath,
+      image_path: imagePaths[0] || "",
+      image_paths: imagePaths,
       published: true,
       updated_at: new Date().toISOString()
     };
@@ -361,10 +377,8 @@ async function saveProject(event) {
     const { error } = await client.from("projects").upsert(record);
     if (error) throw error;
 
-    if (old?.image_path && old.image_path !== imagePath) {
-      await removeImage(old.image_path);
-    }
-
+    // Keep previously saved images unless the user explicitly removes them.
+    // image_path remains populated for backward compatibility with older data.
     await loadProjects();
     clearForm();
     setStatus("Project saved successfully.");
@@ -384,7 +398,11 @@ async function deleteProject(project) {
 
     if (error) throw error;
 
-    await removeImage(project.image_path);
+    const pathsToRemove = normalizeImagePaths(project);
+    if (pathsToRemove.length) {
+      const { error: imageDeleteError } = await client.storage.from("project-images").remove(pathsToRemove);
+      if (imageDeleteError) throw imageDeleteError;
+    }
 
     if ($("project-id").value === project.id) clearForm();
 
@@ -399,9 +417,9 @@ function exportJson() {
   const backup = projects.map(project => ({
     ...project,
     image: project.image_path
-      ? client.storage.from("project-images")
-          .getPublicUrl(project.image_path).data.publicUrl
-      : ""
+      ? client.storage.from("project-images").getPublicUrl(project.image_path).data.publicUrl
+      : "",
+    image_paths: normalizeImagePaths(project)
   }));
 
   const blob = new Blob([JSON.stringify(backup, null, 2)], {
@@ -448,7 +466,8 @@ async function importJson(event) {
         technologies: project.technologies || project.tools || [],
         github_url: safeUrl(githubValue),
         live_demo_url: safeUrl(demoValue),
-        image_path: project.image_path || "",
+        image_path: project.image_path || (Array.isArray(project.image_paths) ? project.image_paths[0] : "") || "",
+        image_paths: Array.isArray(project.image_paths) ? project.image_paths : (project.image_path ? [project.image_path] : []),
         published: project.published !== false
       };
     });
@@ -694,27 +713,31 @@ $("project-form")?.addEventListener("submit", saveProject);
 $("reset-form")?.addEventListener("click", clearForm);
 
 $("remove-image")?.addEventListener("click", () => {
-  selectedImagePath = "";
+  selectedImagePaths = [];
+  newImageFiles = [];
   $("image-file").value = "";
-  $("image-preview").src = "";
-  $("image-preview").classList.add("hidden");
+  renderImagePreviews();
 });
 
 $("image-file")?.addEventListener("change", event => {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  if (
-    !["image/png", "image/jpeg", "image/webp"].includes(file.type) ||
-    file.size > 5 * 1024 * 1024
-  ) {
-    setStatus("Choose a PNG, JPG, or WebP image up to 5 MB.", true);
-    event.target.value = "";
-    return;
+  const files = Array.from(event.target.files || []);
+  for (const file of files) {
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024) {
+      setStatus(`Choose PNG, JPG, or WebP images up to 5 MB each. Invalid file: ${file.name}`, true);
+      event.target.value = "";
+      return;
+    }
   }
+  newImageFiles = [...newImageFiles, ...files];
+  event.target.value = "";
+  renderImagePreviews();
+});
 
-  $("image-preview").src = URL.createObjectURL(file);
-  $("image-preview").classList.remove("hidden");
+$("image-preview-container")?.addEventListener("click", event => {
+  const button = event.target.closest("[data-remove-new-image]");
+  if (!button) return;
+  newImageFiles.splice(Number(button.dataset.removeNewImage), 1);
+  renderImagePreviews();
 });
 
 $("project-list")?.addEventListener("click", event => {
